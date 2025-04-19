@@ -1,5 +1,10 @@
-fastapi
+fastapi~=0.115.12
 uvicorn
-dotenv
-aiosmtplib
-pydantic
+dotenv~=0.9.9
+aiosmtplib~=4.0.0
+pydantic~=2.11.3
+SQLAlchemy~=2.0.40
+python-dotenv~=1.1.0
+APScheduler~=3.11.0
+pdfkit~=1.0.0
+Jinja2~=3.1.6
