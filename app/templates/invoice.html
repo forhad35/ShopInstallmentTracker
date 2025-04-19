@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 40px;
+            background-color: #fff;
+            color: #333;
+        }
+        .invoice-box {
+            max-width: 800px;
+            border: 1px solid #eee;
+            padding: 30px;
+        }
+        .invoice-box h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .info, .summary {
+            margin-top: 20px;
+        }
+        .summary table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary table, .summary th, .summary td {
+            border: 1px solid #ccc;
+        }
+        .summary th, .summary td {
+            padding: 10px;
+            text-align: left;
+        }
+        .summary tfoot td {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-box">
+        <h1>Customer Invoice</h1>
+
+        <div class="info">
+            <p><strong>Name:</strong> {{ name }}</p>
+            <p><strong>Email:</strong> {{ email }}</p>
+        </div>
+
+        <div class="summary">
+            <h3>Installment Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Product Price</th>
+                        <th>Paid Amount</th>
+                        <th>Due Amount</th>
+                        <th>Status</th>
+                        <th>Purchase Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ product_name }}</td>
+                        <td>{{ price }}</td>
+                        <td>{{ paid }}</td>
+                        <td>{{ due }}</td>
+                        <td>{{ 'Paid' if due == 0 else 'Due' }}</td>
+                        <td>{{ date }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
