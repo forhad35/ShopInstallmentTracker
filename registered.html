@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --input-bg: #1e1e1e;
+            --btn-color: #4caf50;
+            --btn-hover: #45a049;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: #1c1c1c;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--btn-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Complete Registration</h2>
+        <form id="registerForm">
+            <input type="text" id="nameField" placeholder="Your Name" required />
+            <input type="email" id="emailField" readonly />
+            <button type="submit">Register</button>
+        </form>
+        <div class="message" id="registerMsg"></div>
+    </div>
+
+    <script>
+        const backendUrl = "http://localhost:8000"; // Change this if needed
+
+        // OTP verify success এর সময় emailField এ set করে দিয়ো
+        const email = localStorage.getItem("verified_email");
+        document.getElementById("emailField").value = email || "";
+
+        document.getElementById("registerForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("nameField").value;
+            const email = document.getElementById("emailField").value;
+
+            const res = await fetch(`${backendUrl}/register/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email })
+            });
+
+            const data = await res.json();
+            const msgBox = document.getElementById("registerMsg");
+
+            if (res.ok) {
+                localStorage.setItem("user", JSON.stringify(data));
+                msgBox.textContent = "✅ Registration successful!";
+                msgBox.style.color = "lightgreen";
+                setTimeout(() => {
+                    window.location.href = "dashboard.html"; // or wherever
+                }, 1500);
+            } else {
+                msgBox.textContent = data.detail || "❌ Registration failed.";
+                msgBox.style.color = "tomato";
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+</head>
+
+<body class="bg-light">
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Admin Dashboard</h2>
+    <!-- Buttons Section -->
+    <div class="row mb-4">
+      <div class="col-md-6 mb-2">
+        <button class="btn btn-outline-primary w-100" onclick="downloadReport('weekly', 'paid')">Weekly Paid
+          Report</button>
+      </div>
+      <div class="col-md-6 mb-2">
+        <button class="btn btn-outline-success w-100" onclick="downloadReport('monthly', 'paid')">Monthly Paid
+          Report</button>
+      </div>
+      <div class="col-md-6 mb-2">
+        <button class="btn btn-outline-warning w-100" onclick="downloadReport('weekly', 'due')">Weekly Due
+          Report</button>
+      </div>
+      <div class="col-md-6 mb-2">
+        <button class="btn btn-outline-danger w-100" onclick="downloadReport('monthly', 'due')">Monthly Due
+          Report</button>
+      </div>
+    </div>
+    <!-- Charts Section -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h5>Weekly Payment Report</h5>
+        <canvas id="weeklyChart"></canvas>
+      </div>
+      <div class="col-md-6">
+        <h5>Monthly Payment Report</h5>
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <h4 class="mb-3">Users with Payments</h4>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped" id="userTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Total Paid</th>
+            <th>Due</th>
+            <th>Purchase Date</th>
+            <th>Invoice</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://shopinstallmenttracker.onrender.com'; // Change to your FastAPI base URL
+
+    function fetchChartData(endpoint, chartId, label) {
+      fetch(`${API_BASE}/admin/${endpoint}`)
+        .then(res => res.json())
+        .then(data => {
+          const labels = data.map(d => d.date);
+          const totals = data.map(d => d.total);
+
+          new Chart(document.getElementById(chartId), {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [{
+                label,
+                data: totals,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                fill: true,
+                tension: 0.3
+              }]
+            }
+          });
+        });
+    }
+    function downloadReport(type, category) {
+    const url = `${API_BASE}/admin/report/${type}/${category}`;
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error("Download failed");
+            return response.blob();
+        })
+        .then(blob => {
+            const fileURL = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = fileURL;
+            a.download = `${type}_${category}_report.pdf`;
+            document.body.appendChild(a);
+            a.target = '_blank'; // Open in new tab
+            a.click();
+            a.remove();
+            showToast("✅ Report downloaded successfully", "success");
+        })
+        .catch(error => {
+            showToast("❌ Failed to download report", "danger");
+            console.error("Download error:", error);
+        });
+}
+
+    function loadTableData() {
+      fetch(`${API_BASE}/admin/users-with-payments`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('userTableBody');
+          tbody.innerHTML = '';
+          data.forEach(user => {
+            const row = `<tr>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>${user.product_name}</td>
+                        <td>${user.price}</td>
+                        <td>${user.total_paid}</td>
+                        <td>${user.due_amount}</td>
+                        <td>${user.purchase_date}</td>
+                        <td>
+                            <a href="${API_BASE}/invoice/${user.user_id}/${user.purchase_id}" class="btn btn-sm btn-primary" target="_blank">Download</a>
+                        </td>
+                    </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+          });
+
+          // Initialize DataTable after loading
+          $('#userTable').DataTable({
+            destroy: true,
+            pageLength: 5
+          });
+        });
+    }
+
+    // Init
+    fetchChartData('weekly-report', 'weeklyChart', 'Weekly Payments');
+    fetchChartData('monthly-report', 'monthlyChart', 'Monthly Payments');
+    loadTableData();
+  </script>
+</body>
+
+</html>

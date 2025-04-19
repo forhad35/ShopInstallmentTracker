@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installment Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .purchase {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2 id="welcomeText">Dashboard</h2>
+
+        <button onclick="toggleForm('purchaseForm')">➕ Add New Purchase</button>
+        <button onclick="fetchPurchases()">📋 My Purchases</button>
+
+        <div id="purchaseForm" class="hidden">
+            <input type="text" id="productName" placeholder="Product Name" />
+            <input type="number" id="productPrice" placeholder="Product Price" />
+            <button onclick="createPurchase()">Submit</button>
+        </div>
+
+        <div id="purchaseList"></div>
+    </div>
+
+    <script>
+
+        const user = JSON.parse(localStorage.getItem("user"));
+        const message = document.createElement("p");
+
+        message.style.textAlign = "center";
+        message.style.color = "green";
+        message.style.fontSize = "1.2rem";
+        message.style.fontWeight = "bold";
+        message.style.marginTop = "1rem";
+        message.style.marginBottom = "1rem";
+        message.id = "message";
+        document.body.appendChild(message);
+        if (user) {
+            document.getElementById("welcomeText").textContent = `Welcome, ${user.name}`;
+        }
+
+        function toggleForm(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle("hidden");
+        }
+
+        async function createPurchase() {
+            const productName = document.getElementById("productName").value;
+            const productPrice = parseFloat(document.getElementById("productPrice").value);
+
+            const res = await fetch("http://localhost:8000/purchases/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    product_name: productName,
+                    product_price: productPrice,
+                }),
+            });
+
+            if (res.ok) {
+                alert("Purchase added successfully!");
+                fetchPurchases();
+            }
+        }
+        async function generateInvoice(purchase_id) {
+
+            const invoiceLink = document.createElement("a");
+            invoiceLink.textContent = "Download Invoice";
+            fetch(`http://localhost:8000/invoice/${user.id}/${purchase_id}`, {
+                method: "GET"
+            }).then(response => {
+                if (!response.ok) {
+                    message.textContent = "Failed to generate invoice. Check the user ID.";
+                    message.style.color = "red";
+                    return;
+                }
+                return response.blob();
+            }).then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                invoiceLink.href = url;
+                invoiceLink.download = `invoice_user_${user.id}.pdf`;
+                document.body.appendChild(invoiceLink);
+                invoiceLink.click();
+                invoiceLink.remove();
+            }).catch(error => {
+                console.error("Error:", error);
+                message.textContent = "Something went wrong.";
+                message.style.color = "red";
+            });
+            // invoiceLink.target = "_blank";
+
+            // invoiceLink.click();
+            message.textContent = "Invoice downloaded successfully!";
+        }
+
+        async function fetchPurchases() {
+            const res = await fetch(`http://localhost:8000/users/${user.id}/purchases/`);
+            const data = await res.json();
+
+            const listDiv = document.getElementById("purchaseList");
+            listDiv.innerHTML = "";
+
+            data.forEach((purchase) => {
+                const div = document.createElement("div");
+                div.className = "purchase";
+                div.innerHTML = `
+          <b>Product:</b> ${purchase.product_name} <br/>
+          <b>Price:</b> ${purchase.product_price} <br/>
+          <b>Paid:</b> ${purchase.total_paid} <br/>
+          <b>Due:</b> ${purchase.due_amount} <br/>
+          <b>Status:</b> ${purchase.due_amount === 0 ? "✅ Paid" : "❗ Due"} <br/>
+          <button onclick="addPayment(${purchase.id})">➕ Add Payment</button>
+        `;
+                listDiv.appendChild(div);
+            });
+        }
+        async function addPayment(purchaseId) {
+            const amount = prompt("Enter payment amount:");
+            const res = await fetch("http://localhost:8000/payments/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    purchase_id: purchaseId,
+                    paid_amount: parseFloat(amount),
+                }),
+            })
+            if (!res.ok) {
+                message.textContent = "Failed to add payment.";
+                message.style.color = "red";
+                return;
+            }
+            const data = await res.json();
+            message.textContent = "Payment added successfully!";
+            generateInvoice(purchaseId);
+            fetchPurchases();
+
+        }
+        // message.remove();
+    </script>
+</body>
+
+</html>
