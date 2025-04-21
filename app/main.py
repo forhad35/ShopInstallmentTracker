@@ -23,10 +23,6 @@ scheduler.start()
 load_dotenv()
 
 app = FastAPI()
-app.include_router(user_router)
-app.include_router(email_service)
-app.include_router(admin_router)
-app.include_router(invoice_router)
 # Allow frontend access (CORS policy)
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +31,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(user_router)
+app.include_router(email_service)
+app.include_router(admin_router)
+app.include_router(invoice_router)
+
 
 
 @app.get("/")
