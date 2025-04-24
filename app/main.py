@@ -26,7 +26,7 @@ app = FastAPI()
 # Allow frontend access (CORS policy)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # frontend এর URL চাইলে নির্দিষ্ট করতেও পারো
+    allow_origins=["https://forhad35.github.io"],  # frontend এর URL চাইলে নির্দিষ্ট করতেও পারো
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
